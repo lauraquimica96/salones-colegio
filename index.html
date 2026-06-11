@@ -478,7 +478,7 @@
   }
 
   function generarQR() {
-    const url = window.location.href.split('?')[0];
+    const url = window.location.href.split("?")[0] + "?publico";
     document.getElementById('qr-url-texto').textContent = url;
     document.getElementById('qrcode').innerHTML = '';
     new QRCode(document.getElementById('qrcode'), {
@@ -493,7 +493,7 @@
   }
 
   function copiarEnlace() {
-    const url = window.location.href.split('?')[0];
+    const url = window.location.href.split("?")[0] + "?publico";
     navigator.clipboard.writeText(url).then(() => mostrarToast('✓ Enlace copiado'));
   }
 
@@ -580,11 +580,20 @@
     mostrarToast('✓ Nombre actualizado');
   }
 
+  // Modo público: si la URL tiene ?publico oculta las pestañas y muestra solo vista pública
+  const esModoPublico = window.location.search.includes('publico');
+  if (esModoPublico) {
+    document.querySelector('.tabs-bar').style.display = 'none';
+    document.getElementById('view-salones').classList.remove('active');
+    document.getElementById('view-publico').classList.add('active');
+    tabActual = 'publico';
+  }
+
   // Callback desde Firebase
   window._renderAll = function(salones) {
     const sorted = [...salones].sort((a, b) => a.id - b.id);
-    renderSalones(sorted);
-    if (tabActual === 'publico') renderPublico(sorted);
+    if (!esModoPublico) renderSalones(sorted);
+    if (tabActual === 'publico' || esModoPublico) renderPublico(sorted);
   };
 </script>
 </body>
