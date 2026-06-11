@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Salones — Colegio</title>
+  <meta name="description" content="Disponibilidad de salones en tiempo real" />
+  <meta name="theme-color" content="#185FA5" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
+
+  <!-- QR Code library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC8uysuxSq2HIYwcgECv7bXnI8VHTAi_LU",
+      authDomain: "salones-colegio.firebaseapp.com",
+      databaseURL: "https://salones-colegio-default-rtdb.firebaseio.com",
+      projectId: "salones-colegio",
+      storageBucket: "salones-colegio.firebasestorage.app",
+      messagingSenderId: "998845017851",
+      appId: "1:998845017851:web:47768ab2d1cda76567ca5e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const salonesDefault = [
+      { id: 1,  nombre: "Salón 101", estado: "cupo" },
+      { id: 2,  nombre: "Salón 102", estado: "cupo" },
+      { id: 3,  nombre: "Salón 103", estado: "cupo" },
+      { id: 4,  nombre: "Salón 104", estado: "cupo" },
+      { id: 5,  nombre: "Salón 105", estado: "cupo" },
+      { id: 6,  nombre: "Salón 106", estado: "cupo" },
+      { id: 7,  nombre: "Salón 201", estado: "cupo" },
+      { id: 8,  nombre: "Salón 202", estado: "cupo" },
+      { id: 9,  nombre: "Salón 203", estado: "cupo" },
+      { id: 10, nombre: "Salón 204", estado: "cupo" },
+      { id: 11, nombre: "Salón 205", estado: "cupo" },
+      { id: 12, nombre: "Salón 206", estado: "cupo" },
+      { id: 13, nombre: "Salón 301", estado: "cupo" },
+      { id: 14, nombre: "Salón 302", estado: "cupo" },
+      { id: 15, nombre: "Salón 303", estado: "cupo" },
+      { id: 16, nombre: "Salón 304", estado: "cupo" },
+      { id: 17, nombre: "Salón 305", estado: "cupo" },
+      { id: 18, nombre: "Salón 306", estado: "cupo" }
+    ];
+
+    // Inicializa salones si no existen
+    const salonesRef = ref(db, 'salones');
+    onValue(salonesRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        const initial = {};
+        salonesDefault.forEach(s => { initial[s.id] = s; });
+        set(salonesRef, initial);
+      } else {
+        const data = snapshot.val();
+        const lista = Object.values(data);
+        window._salonesData = lista;
+        window._renderAll && window._renderAll(lista);
+      }
+    });
+
+    window._toggleEstado = function(id, estadoActual) {
+      const nuevoEstado = estadoActual === 'cupo' ? 'lleno' : 'cupo';
+      update(ref(db, 'salones/' + id), { estado: nuevoEstado });
+    };
+
+    window._editarNombre = function(id, nuevoNombre) {
+      if (!nuevoNombre.trim()) return;
+      update(ref(db, 'salones/' + id), { nombre: nuevoNombre.trim() });
+    };
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --azul: #185FA5;
+      --azul-claro: #E6F1FB;
+      --azul-texto: #0C447C;
+      --verde: #3B6D11;
+      --verde-fondo: #EAF3DE;
+      --rojo: #A32D2D;
+      --rojo-fondo: #FCEBEB;
+      --borde: rgba(0,0,0,0.1);
+      --fondo: #F7F8FA;
+      --blanco: #FFFFFF;
+      --texto: #1A1A1A;
+      --texto-secundario: #6B7280;
+      --radio: 12px;
+      --radio-sm: 8px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--fondo);
+      color: var(--texto);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* HEADER */
+    .app-header {
+      background: var(--azul);
+      color: white;
+      padding: 16px 20px 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .app-header i { font-size: 22px; opacity: 0.9; }
+    .app-header-text h1 { font-size: 17px; font-weight: 600; }
+    .app-header-text p { font-size: 12px; opacity: 0.75; margin-top: 1px; }
+
+    /* TABS */
+    .tabs-bar {
+      display: flex;
+      background: var(--blanco);
+      border-bottom: 0.5px solid var(--borde);
+      position: sticky;
+      top: 58px;
+      z-index: 99;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 4px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--texto-secundario);
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn i { font-size: 20px; }
+    .tab-btn.active { color: var(--azul); border-bottom-color: var(--azul); }
+
+    /* VIEWS */
+    .view { display: none; padding: 16px; }
+    .view.active { display: block; }
+
+    /* SALON CARD */
+    .salon-card {
+      background: var(--blanco);
+      border: 0.5px solid var(--borde);
+      border-radius: var(--radio);
+      margin-bottom: 10px;
+      overflow: hidden;
+      transition: box-shadow 0.15s;
+    }
+    .salon-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+    }
+    .salon-icono {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radio-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 22px;
+    }
+    .salon-icono.cupo { background: var(--verde-fondo); color: var(--verde); }
+    .salon-icono.lleno { background: var(--rojo-fondo); color: var(--rojo); }
+
+    .salon-info { flex: 1; min-width: 0; }
+    .salon-nombre {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .salon-badge {
+      display: inline-block;
+      margin-top: 3px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+    .salon-badge.cupo { background: var(--verde-fondo); color: var(--verde); }
+    .salon-badge.lleno { background: var(--rojo-fondo); color: var(--rojo); }
+
+    .salon-botones { display: flex; gap: 6px; align-items: center; }
+    .btn-estado {
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 0.5px solid var(--borde);
+      border-radius: var(--radio-sm);
+      background: var(--fondo);
+      cursor: pointer;
+      white-space: nowrap;
+      color: var(--texto);
+      transition: background 0.15s;
+    }
+    .btn-estado:active { transform: scale(0.97); }
+    .btn-editar {
+      width: 32px;
+      height: 32px;
+      border: 0.5px solid var(--borde);
+      border-radius: var(--radio-sm);
+      background: var(--fondo);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--texto-secundario);
+      font-size: 16px;
+    }
+    .btn-editar.activo { background: var(--azul-claro); color: var(--azul-texto); border-color: rgba(24,95,165,0.3); }
+
+    /* EDIT INLINE */
+    .salon-editar {
+      display: none;
+      padding: 0 14px 12px;
+      gap: 8px;
+    }
+    .salon-editar.abierto { display: flex; }
+    .salon-editar input {
+      flex: 1;
+      padding: 8px 11px;
+      font-size: 13px;
+      border: 0.5px solid var(--borde);
+      border-radius: var(--radio-sm);
+      background: var(--fondo);
+      color: var(--texto);
+      outline: none;
+    }
+    .salon-editar input:focus { border-color: var(--azul); }
+    .btn-guardar {
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radio-sm);
+      background: var(--azul);
+      color: white;
+      cursor: pointer;
+    }
+    .btn-guardar:active { transform: scale(0.97); }
+
+    /* QR VIEW */
+    .qr-view { text-align: center; padding: 20px 16px; }
+    .qr-card {
+      background: var(--blanco);
+      border: 0.5px solid var(--borde);
+      border-radius: var(--radio);
+      padding: 24px;
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+    #qrcode canvas, #qrcode img { border-radius: 4px; }
+    .qr-url {
+      font-size: 12px;
+      color: var(--texto-secundario);
+      word-break: break-all;
+      margin-bottom: 20px;
+      background: var(--fondo);
+      border-radius: var(--radio-sm);
+      padding: 8px 12px;
+    }
+    .qr-instrucciones {
+      font-size: 13px;
+      color: var(--texto-secundario);
+      line-height: 1.6;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .qr-instrucciones strong { color: var(--texto); }
+    .btn-accion {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      border: 0.5px solid var(--borde);
+      border-radius: var(--radio);
+      background: var(--blanco);
+      color: var(--texto);
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background 0.15s;
+    }
+    .btn-accion:active { background: var(--fondo); }
+    .btn-accion.primario { background: var(--azul); color: white; border-color: var(--azul); }
+
+    /* VISTA PÚBLICA */
+    .pub-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: var(--blanco);
+      border: 0.5px solid var(--borde);
+      border-radius: var(--radio-sm);
+      padding: 10px 8px;
+      text-align: center;
+    }
+    .stat-num { font-size: 24px; font-weight: 700; }
+    .stat-num.verde { color: var(--verde); }
+    .stat-num.rojo { color: var(--rojo); }
+    .stat-label { font-size: 11px; color: var(--texto-secundario); margin-top: 2px; }
+
+    .pub-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .pub-card {
+      background: var(--blanco);
+      border-radius: var(--radio);
+      padding: 14px 10px;
+      text-align: center;
+      border: 1.5px solid var(--borde);
+    }
+    .pub-card.cupo { border-color: #C0DD97; }
+    .pub-card.lleno { border-color: #F09595; }
+    .pub-card i { font-size: 26px; display: block; margin-bottom: 6px; }
+    .pub-card.cupo i { color: var(--verde); }
+    .pub-card.lleno i { color: var(--rojo); }
+    .pub-nombre {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pub-estado {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+    .pub-estado.cupo { background: var(--verde-fondo); color: var(--verde); }
+    .pub-estado.lleno { background: var(--rojo-fondo); color: var(--rojo); }
+
+    /* LOADING */
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--texto-secundario);
+    }
+    .loading i { font-size: 32px; animation: spin 1s linear infinite; display: block; margin: 0 auto 12px; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* NOTIF TOAST */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1A1A1A;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.25s;
+      pointer-events: none;
+      z-index: 999;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* LEYENDA */
+    .leyenda {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .leyenda-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--texto-secundario); }
+    .leyenda-punto { width: 10px; height: 10px; border-radius: 50%; }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <i class="ti ti-school"></i>
+  <div class="app-header-text">
+    <h1>Salones del colegio</h1>
+    <p>Disponibilidad en tiempo real</p>
+  </div>
+</header>
+
+<nav class="tabs-bar">
+  <button class="tab-btn active" onclick="cambiarTab('salones')" id="tab-salones">
+    <i class="ti ti-door"></i> Salones
+  </button>
+  <button class="tab-btn" onclick="cambiarTab('qr')" id="tab-qr">
+    <i class="ti ti-qrcode"></i> QR
+  </button>
+  <button class="tab-btn" onclick="cambiarTab('publico')" id="tab-publico">
+    <i class="ti ti-eye"></i> Vista pública
+  </button>
+</nav>
+
+<div id="view-salones" class="view active">
+  <div class="loading"><i class="ti ti-loader"></i> Cargando salones...</div>
+</div>
+
+<div id="view-qr" class="view">
+  <div class="qr-view">
+    <div class="qr-card">
+      <div id="qrcode"></div>
+    </div>
+    <div class="qr-url" id="qr-url-texto">...</div>
+    <div class="qr-instrucciones">
+      <strong>¿Cómo funciona?</strong><br/>
+      Comparte este QR en la cartelera del colegio o por WhatsApp. Cualquier persona que lo escanee verá en su celular qué salones tienen cupo y cuáles están llenos — sin instalar ninguna app.
+    </div>
+    <button class="btn-accion primario" onclick="copiarEnlace()">
+      <i class="ti ti-copy"></i> Copiar enlace
+    </button>
+    <button class="btn-accion" onclick="cambiarTab('publico')">
+      <i class="ti ti-eye"></i> Ver vista pública
+    </button>
+  </div>
+</div>
+
+<div id="view-publico" class="view">
+  <div class="loading"><i class="ti ti-loader"></i> Cargando...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let tabActual = 'salones';
+  let editandoId = null;
+  let qrGenerado = false;
+
+  function cambiarTab(tab) {
+    tabActual = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('view-' + tab).classList.add('active');
+    if (tab === 'qr' && !qrGenerado) generarQR();
+    if (tab === 'publico' && window._salonesData) renderPublico(window._salonesData);
+  }
+
+  function mostrarToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function generarQR() {
+    const url = window.location.href.split('?')[0];
+    document.getElementById('qr-url-texto').textContent = url;
+    document.getElementById('qrcode').innerHTML = '';
+    new QRCode(document.getElementById('qrcode'), {
+      text: url,
+      width: 200,
+      height: 200,
+      colorDark: '#1A1A1A',
+      colorLight: '#FFFFFF',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    qrGenerado = true;
+  }
+
+  function copiarEnlace() {
+    const url = window.location.href.split('?')[0];
+    navigator.clipboard.writeText(url).then(() => mostrarToast('✓ Enlace copiado'));
+  }
+
+  function renderSalones(salones) {
+    const container = document.getElementById('view-salones');
+    container.innerHTML = salones.map(s => `
+      <div class="salon-card" id="card-${s.id}">
+        <div class="salon-main">
+          <div class="salon-icono ${s.estado}">
+            <i class="ti ${s.estado === 'cupo' ? 'ti-users' : 'ti-lock'}"></i>
+          </div>
+          <div class="salon-info">
+            <div class="salon-nombre">${s.nombre}</div>
+            <span class="salon-badge ${s.estado}">${s.estado === 'cupo' ? 'Con cupo' : 'Sala llena'}</span>
+          </div>
+          <div class="salon-botones">
+            <button class="btn-estado" onclick="window._toggleEstado(${s.id}, '${s.estado}')">
+              ${s.estado === 'cupo' ? 'Marcar lleno' : 'Abrir cupo'}
+            </button>
+            <button class="btn-editar ${editandoId === s.id ? 'activo' : ''}" onclick="toggleEditar(${s.id})">
+              <i class="ti ti-pencil"></i>
+            </button>
+          </div>
+        </div>
+        <div class="salon-editar ${editandoId === s.id ? 'abierto' : ''}" id="editar-${s.id}">
+          <input type="text" id="input-${s.id}" value="${s.nombre}" placeholder="Nombre del salón"
+            onkeydown="if(event.key==='Enter') guardarNombre(${s.id})" />
+          <button class="btn-guardar" onclick="guardarNombre(${s.id})">Guardar</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderPublico(salones) {
+    const cupo = salones.filter(s => s.estado === 'cupo').length;
+    const lleno = salones.filter(s => s.estado === 'lleno').length;
+    document.getElementById('view-publico').innerHTML = `
+      <div class="pub-stats">
+        <div class="stat-card">
+          <div class="stat-num verde">${cupo}</div>
+          <div class="stat-label">Con cupo</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num rojo">${lleno}</div>
+          <div class="stat-label">Sala llena</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">${salones.length}</div>
+          <div class="stat-label">Total</div>
+        </div>
+      </div>
+      <div class="leyenda">
+        <div class="leyenda-item"><div class="leyenda-punto" style="background:#639922"></div> Con cupo</div>
+        <div class="leyenda-item"><div class="leyenda-punto" style="background:#E24B4A"></div> Sala llena</div>
+      </div>
+      <div class="pub-grid">
+        ${salones.map(s => `
+          <div class="pub-card ${s.estado}">
+            <i class="ti ${s.estado === 'cupo' ? 'ti-users' : 'ti-lock'}"></i>
+            <div class="pub-nombre">${s.nombre}</div>
+            <span class="pub-estado ${s.estado}">${s.estado === 'cupo' ? 'Con cupo' : 'Sala llena'}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function toggleEditar(id) {
+    editandoId = editandoId === id ? null : id;
+    if (window._salonesData) renderSalones(window._salonesData);
+    if (editandoId) {
+      setTimeout(() => {
+        const input = document.getElementById('input-' + id);
+        if (input) { input.focus(); input.select(); }
+      }, 50);
+    }
+  }
+
+  function guardarNombre(id) {
+    const input = document.getElementById('input-' + id);
+    if (!input) return;
+    window._editarNombre(id, input.value);
+    editandoId = null;
+    mostrarToast('✓ Nombre actualizado');
+  }
+
+  // Callback desde Firebase
+  window._renderAll = function(salones) {
+    const sorted = [...salones].sort((a, b) => a.id - b.id);
+    renderSalones(sorted);
+    if (tabActual === 'publico') renderPublico(sorted);
+  };
+</script>
+</body>
+</html>
