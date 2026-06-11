@@ -2,7 +2,7 @@
   "name": "Salones del Colegio",
   "short_name": "Salones",
   "description": "Disponibilidad de salones en tiempo real",
-  "start_url": "/",
+  "start_url": "/salones-colegio/",
   "display": "standalone",
   "background_color": "#F7F8FA",
   "theme_color": "#185FA5",
